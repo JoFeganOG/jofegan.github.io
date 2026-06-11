@@ -401,7 +401,7 @@
             <img src="/truman.png" alt="Truman Cartoon">
         </div>
         <p class="truman-quote">"In case I don't see you... good afternoon, good evening, and good night."</p>
-        <button class="close-modal-btn" onclick="closeModal()">Stay Here</button>
+        <!--<button class="close-modal-btn" onclick="closeModal()">Cya</button> -->
     </div>
 </div>
 
@@ -420,7 +420,12 @@
         <span class="tag">PRINCE2 Practitioner</span>
     </div>
 
-    <a href="https://www.linkedin.com/in/jofegan/" target="_blank" class="cta-button">Connect on LinkedIn</a>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Then in the body, replace button with: -->
+    <a href="https://www.linkedin.com/in/jofegan/" target="_blank" class="cta-button">
+    <i class="fab fa-linkedin"></i> Connect on LinkedIn
+    </a>
+    
 </header>
 
 <div class="container">
@@ -573,13 +578,8 @@
     function toggleTimeline(element) {
         const content = element.nextElementSibling;
         const isOpen = content.classList.contains('open');
-        
-        // Close all others
         document.querySelectorAll('.timeline-content').forEach(el => el.classList.remove('open'));
-        
-        if (!isOpen) {
-            content.classList.add('open');
-        }
+        if (!isOpen) content.classList.add('open');
     }
 
     // --- Carousel Logic ---
@@ -588,7 +588,6 @@
     const dotsContainer = document.getElementById('dots');
     let currentIndex = 0;
 
-    // Create dots
     slides.forEach((_, idx) => {
         const dot = document.createElement('div');
         dot.classList.add('nav-dot');
@@ -599,76 +598,107 @@
 
     function moveToSlide(index) {
         currentIndex = index;
-        const amountToMove = -100 * index;
-        track.style.transform = `translateX(${amountToMove}%)`;
-        
-        // Update dots
+        track.style.transform = `translateX(${ -100 * index }%)`;
         document.querySelectorAll('.nav-dot').forEach((dot, i) => {
             dot.classList.toggle('active', i === index);
         });
     }
-
-    // Auto-play carousel every 5 seconds
     setInterval(() => {
         currentIndex = (currentIndex + 1) % slides.length;
         moveToSlide(currentIndex);
     }, 5000);
 
-    // --- Truman Show Modal Logic ---
+    // --- Truman Show Modal (NO BROWSER WARNING) ---
     const modal = document.getElementById('exitModal');
-    let preventClose = false;
-
-    window.addEventListener('beforeunload', function(e) {
-        // Only trigger if not already showing modal and user is trying to leave
-        if(!preventClose && !modal.classList.contains('show')) {
-            preventClose = true;
-            e.preventDefault(); // Standard browser behavior
-            e.returnValue = ''; 
-            // Show custom modal shortly before unload (approximate)
-            setTimeout(() => {
-                modal.classList.add('show');
-            }, 100);
-        }
-    });
-
-    // Handle clicks that might cause navigation (optional aggressive intercept)
+    const closeBtn = document.querySelector('.close-modal-btn');
+    
     document.body.addEventListener('click', function(e) {
-        // If clicking an external link, show modal first
-        if(e.target.closest('a') && e.target.closest('a').href.startsWith('http') && !e.target.closest('a').href.includes(window.location.hostname)) {
-             if(!preventClose && !modal.classList.contains('show')) {
-                 preventClose = true;
-                 modal.classList.add('show');
-                 e.preventDefault(); // Stop immediate navigation
-                 
-                 // Allow navigation after closing modal
-                 const closeBtn = document.querySelector('.close-modal-btn');
-                 // Re-attach click logic for the specific link later
-                 const originalHref = e.target.closest('a').href;
-                 const currentLink = e.target.closest('a');
-                 
-                 closeBtn.onclick = function() {
-                     closeModal();
-                     window.location.href = originalHref;
-                     // Restore original link behavior for next time
-                     closeBtn.onclick = closeModal; 
-                 };
-             }
+        const link = e.target.closest('a');
+        
+        // Only intercept external links
+        if (link && link.hostname !== window.location.hostname && link.getAttribute('href')) {
+            e.preventDefault();
+            const targetUrl = link.href;
+            modal.classList.add('show');
+            
+            closeBtn.onclick = function() {
+                closeModal();
+                window.location.href = targetUrl;
+                closeBtn.onclick = closeModal; 
+            };
         }
     });
 
     function closeModal() {
         modal.classList.remove('show');
-        preventClose = false;
     }
-
-    // Close modal if clicking outside content (optional, keeps the joke strict?)
-    // Uncomment below if you want clicking outside to close it
-    /*
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal();
-    });
-    */
 </script>
 
+    <!-- Knowledge Base Widget -->
+<div style="position: fixed; bottom: 20px; right: 20px; z-index: 999;">
+    <button id="chatToggle" style="background: var(--accent); color: white; border: none; padding: 1rem; border-radius: 50%; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 60px; height: 60px; font-size: 2rem;">💬</button>
+    
+    <div id="chatWindow" style="display: none; position: absolute; bottom: 80px; right: 0; width: 350px; background: white; border-radius: 10px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); overflow: hidden; max-height: 400px;">
+        <div style="background: var(--primary); color: white; padding: 1rem;">
+            Ask about my experience
+        </div>
+        <div id="chatContent" style="padding: 1rem; overflow-y: auto; height: 300px;">
+            <!-- Messages go here -->
+        </div>
+        <div style="padding: 0.5rem; display: flex; gap: 0.5rem;">
+            <input type="text" id="chatInput" placeholder="e.g., EMR experience?" style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px;">
+            <button onclick="sendQuery()" style="background: var(--accent); color: white; border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer;">Ask</button>
+        </div>
+    </div>
+</div>
+
+<style>
+#chatContent { font-family: 'Inter', sans-serif; }
+.chat-message { margin-bottom: 0.8rem; }
+.user-msg { color: var(--accent); font-weight: 600; }
+.bot-msg { color: var(--text-light); font-style: italic; }
+</style>
+
+<script>
+const knowledgeBase = {
+    emr: "Yes! I led a $35M EMR implementation across 24 facilities, accelerating rollout by 18 months within budget.",
+    emrs: "Yes! I led a $35M EMR implementation across 24 facilities, accelerating rollout by 18 months within budget.",
+    leadership: "I have over 10 years leading digital health teams, managing national portfolios up to 43M annual interactions.",
+    agile: "I'm an AgileSHIFT Enterprise Agility certified practitioner with extensive hybrid Agile/Waterfall experience.",
+    prince2: "I am a PRINCE2 Practitioner certified since 2014, with multiple successful program deliveries.",
+    stakeholder: "I regularly work with clinical, technical, vendor, and executive stakeholders to align deliverables.",
+    default: "Thanks for asking! I have relevant experience in this area. Connect on LinkedIn to discuss details."
+};
+
+document.getElementById('chatToggle').onclick = function() {
+    const chat = document.getElementById('chatWindow');
+    chat.style.display = chat.style.display === 'none' ? 'block' : 'none';
+};
+
+function sendQuery() {
+    const input = document.getElementById('chatInput');
+    const question = input.value.toLowerCase().trim();
+    const content = document.getElementById('chatContent');
+    
+    if (!question) return;
+    
+    // Add user message
+    content.innerHTML += `<div class="chat-message"><span class="user-msg">You:</span> ${input.value}</div>`;
+    
+    // Find matching response
+    let response = knowledgeBase.default;
+    Object.keys(knowledgeBase).forEach(key => {
+        if (question.includes(key)) response = knowledgeBase[key];
+    });
+    
+    // Simulate thinking delay
+    setTimeout(() => {
+        content.innerHTML += `<div class="chat-message"><span class="bot-msg">Lumo Assistant:</span> ${response}</div>`;
+        content.scrollTop = content.scrollHeight;
+    }, 300);
+    
+    input.value = '';
+}
+</script>
 </body>
 </html>
